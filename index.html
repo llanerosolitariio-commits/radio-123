@@ -3,40 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Walkie-Talkie Personalizado</title>
+    <title>NEURAL-TASK // CYBERPUNK</title>
     <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
+    <div class="scanner-line"></div>
+    <div class="container">
+        <header>
+            <h1 data-text="NEURAL_TASKS v1.0">NEURAL_TASKS v1.0</h1>
+            <p class="status">STATUS: ONLINE // ACCESS_GRANTED</p>
+        </header>
 
-    <div class="radio-container">
-        <div class="status-panel">
-            <span id="status-light"></span>
-            <span id="status-text">RADIO APAGADA</span>
+        <div class="input-group">
+            <input type="text" id="taskInput" placeholder="INGRESAR DATOS..." autocomplete="off">
+            <button id="addBtn">EJECUTAR</button>
         </div>
 
-        <div class="setup-area">
-            <label>1. Tu Identificador:</label>
-            <input type="text" id="my-custom-id" placeholder="Ej: RadioJuan">
-            <button onclick="iniciarRadio()" id="btn-start">ENCENDER RADIO</button>
-        </div>
-
-        <div class="setup-area" id="connect-area" style="display:none;">
-            <hr>
-            <label>2. Conectar con:</label>
-            <input type="text" id="peer-id" placeholder="Ej: RadioPedro">
-            <button onclick="conectar()" id="btn-connect">ESTABLECER VÍNCULO</button>
-        </div>
-
-        <div class="ptt-area">
-            <button id="ptt-button" disabled>
-                <i class="fas fa-microphone"></i>
-                <p>MANTÉN PARA HABLAR</p>
-            </button>
-        </div>
+        <ul id="taskList"></ul>
     </div>
-
-    <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <script src="script.js"></script>
 </body>
 </html>

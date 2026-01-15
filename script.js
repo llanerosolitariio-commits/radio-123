@@ -1,82 +1,45 @@
-let peer;
-let conn;
-let currentCall;
+const input = document.getElementById('taskInput');
+const btn = document.getElementById('addBtn');
+const list = document.getElementById('taskList');
 
-const pttButton = document.getElementById('ptt-button');
-const statusLight = document.getElementById('status-light');
-const statusText = document.getElementById('status-text');
+// Cargar tareas al iniciar
+document.addEventListener('DOMContentLoaded', getTasks);
 
-// SONIDOS DE RADIO (Opcional pero genial)
-const beepStart = new Audio('https://www.soundjay.com/communication/sounds/beeper-2.mp3');
-const beepEnd = new Audio('https://www.soundjay.com/communication/sounds/radio-noise-1.mp3');
+btn.addEventListener('click', addTask);
 
-// 1. PASO UNO: Encender la radio con TU ID
-function iniciarRadio() {
-    const customId = document.getElementById('my-custom-id').value.trim();
-    if (!customId) return alert("Por favor, escribe un nombre para tu radio");
+function addTask() {
+    if (input.value === '') return;
 
-    // Creamos el Peer con el ID que tú elegiste
-    peer = new Peer(customId);
-
-    peer.on('open', (id) => {
-        statusLight.style.background = "orange";
-        statusText.innerText = "ESCUCHANDO...";
-        document.getElementById('btn-start').disabled = true;
-        document.getElementById('my-custom-id').disabled = true;
-        document.getElementById('connect-area').style.display = "block";
-    });
-
-    peer.on('error', (err) => {
-        alert("Ese nombre ya está en uso o es inválido. Prueba con otro.");
-        location.reload();
-    });
-
-    // Escuchar llamadas entrantes
-    peer.on('call', (call) => {
-        call.answer(); 
-        call.on('stream', (remoteStream) => {
-            const audio = new Audio();
-            audio.srcObject = remoteStream;
-            audio.play();
-        });
-    });
+    createTaskElement(input.value);
+    saveLocal(input.value);
+    input.value = '';
 }
 
-// 2. PASO DOS: Conectar con la otra radio
-function conectar() {
-    const remoteId = document.getElementById('peer-id').value.trim();
-    if (!remoteId) return alert("Escribe el ID de la otra persona");
+function createTaskElement(text) {
+    const li = document.createElement('li');
+    li.innerHTML = `
+        <span>> ${text}</span>
+        <span class="delete-btn" onclick="removeTask(this)">[ELIMINAR]</span>
+    `;
+    list.appendChild(li);
+}
 
-    conn = peer.connect(remoteId);
+function saveLocal(task) {
+    let tasks = localStorage.getItem('tasks') ? JSON.parse(localStorage.getItem('tasks')) : [];
+    tasks.push(task);
+    localStorage.setItem('tasks', JSON.stringify(tasks));
+}
+
+function getTasks() {
+    let tasks = localStorage.getItem('tasks') ? JSON.parse(localStorage.getItem('tasks')) : [];
+    tasks.forEach(task => createTaskElement(task));
+}
+
+function removeTask(element) {
+    const taskText = element.parentElement.innerText.replace('> ', '').replace(' [ELIMINAR]', '').trim();
+    element.parentElement.remove();
     
-    conn.on('open', () => {
-        statusLight.style.background = "#22c55e";
-        statusText.innerText = "CONECTADO A: " + remoteId;
-        pttButton.disabled = false;
-    });
+    let tasks = JSON.parse(localStorage.getItem('tasks'));
+    const filteredTasks = tasks.filter(t => t !== taskText);
+    localStorage.setItem('tasks', JSON.stringify(filteredTasks));
 }
-
-// 3. PASO TRES: Hablar (Push To Talk)
-pttButton.onmousedown = pttButton.ontouchstart = async (e) => {
-    e.preventDefault(); // Evita menús contextuales en móvil
-    try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        const remoteId = document.getElementById('peer-id').value;
-        
-        currentCall = peer.call(remoteId, stream);
-        statusLight.style.background = "red";
-        statusText.innerText = "TRANSMITIENDO...";
-        beepStart.play();
-    } catch (err) {
-        alert("Error al acceder al micrófono");
-    }
-};
-
-pttButton.onmouseup = pttButton.ontouchend = () => {
-    if (currentCall) {
-        currentCall.close();
-        statusLight.style.background = "#22c55e";
-        statusText.innerText = "CONECTADO";
-        beepEnd.play();
-    }
-};};
