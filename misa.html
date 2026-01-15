@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CANTORAL PARROQUIAL - ADMINISTRACIÓN</title>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-storage-compat.js"></script>
+
+    <style>
+        :root { --oro: #d4af37; --vino: #800000; --crema: #fdfbf7; --blanco: #ffffff; }
+        body { font-family: 'Times New Roman', serif; background: var(--crema); color: #333; margin: 0; }
+        
+        /* Estética Sacra */
+        header { background: var(--vino); color: var(--oro); text-align: center; padding: 2rem; border-bottom: 4px solid var(--oro); }
+        .container { max-width: 800px; margin: auto; padding: 20px; }
+        
+        /* Buscador */
+        #search { width: 100%; padding: 15px; border: 2px solid var(--oro); border-radius: 25px; margin-bottom: 20px; font-size: 1.1rem; }
+
+        /* Lista de Cantos */
+        .canto-item { background: var(--blanco); border-bottom: 1px solid #ddd; padding: 15px; display: flex; justify-content: space-between; align-items: center; transition: 0.3s; }
+        .canto-item:hover { background: #f1f1f1; }
+        .btn-pdf { background: var(--oro); color: var(--vino); padding: 8px 15px; text-decoration: none; border-radius: 5px; font-weight: bold; }
+
+        /* Panel de Admin (Oculto por defecto) */
+        #adminPanel { display: none; background: #eee; padding: 20px; border: 2px dashed var(--vino); margin-top: 30px; border-radius: 10px; }
+        .admin-lock { text-align: center; margin-top: 50px; cursor: pointer; color: #ccc; font-size: 0.8rem; }
+        input[type="file"], input[type="text"] { margin: 10px 0; display: block; width: 100%; }
+        .btn-upload { background: var(--vino); color: white; padding: 10px; border: none; width: 100%; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+<header>
+    <div>+</div>
+    <h1>CANTORAL LITÚRGICO</h1>
+    <p>Ad maiorem Dei gloriam</p>
+</header>
+
+<div class="container">
+    <input type="text" id="search" placeholder="🔍 Buscar canto o momento de la misa..." onkeyup="filterTasks()">
+    
+    <div id="listaCantos">
+        </div>
+
+    <div class="admin-lock" onclick="showAdmin()">🔓 ACCESO ADMINISTRACIÓN</div>
+
+    <div id="adminPanel">
+        <h3>Panel de Control (Solo Admin)</h3>
+        <input type="password" id="adminPass" placeholder="Clave Maestra">
+        <input type="text" id="cantoNombre" placeholder="Nombre del Canto (Ej: Entrada - Juntos como hermanos)">
+        <input type="file" id="pdfFile" accept=".pdf">
+        <button class="btn-upload" onclick="uploadCanto()">SUBIR CANTO AL SISTEMA</button>
+        <p id="status"></p>
+    </div>
+</div>
+
+<script>
+    // Configuración de Firebase (REEMPLAZA CON TUS DATOS)
+    const firebaseConfig = {
+        apiKey: "TU_API_KEY",
+        authDomain: "TU_PROYECTO.firebaseapp.com",
+        projectId: "TU_PROYECTO",
+        storageBucket: "TU_PROYECTO.appspot.com",
+        messagingSenderId: "TU_ID",
+        appId: "TU_APP_ID"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    const storage = firebase.storage();
+
+    // Mostrar Admin con Clave
+    function showAdmin() {
+        let pass = prompt("Ingrese clave de administrador:");
+        if (pass === "1234") { // Cambia "1234" por tu clave
+            document.getElementById('adminPanel').style.display = 'block';
+        }
+    }
+
+    // Subir PDF y Datos
+    async function uploadCanto() {
+        const file = document.getElementById('pdfFile').files[0];
+        const nombre = document.getElementById('cantoNombre').value;
+        const status = document.getElementById('status');
+
+        if (!file || !nombre) return alert("Completa todos los campos");
+
+        status.innerText = "Subiendo archivo...";
+        
+        try {
+            const storageRef = storage.ref(`cantos/${file.name}`);
+            await storageRef.put(file);
+            const url = await storageRef.getDownloadURL();
+
+            await db.collection("cantoral").add({
+                nombre: nombre,
+                url: url,
+                fecha: new Date()
+            });
+
+            status.innerText = "¡Canto subido con éxito!";
+            location.reload();
+        } catch (e) {
+            status.innerText = "Error: " + e.message;
+        }
+    }
+
+    // Cargar Cantos para el Público
+    db.collection("cantoral").orderBy("nombre").onSnapshot((snapshot) => {
+        const lista = document.getElementById('listaCantos');
+        lista.innerHTML = '';
+        snapshot.forEach((doc) => {
+            const data = doc.data();
+            lista.innerHTML += `
+                <div class="canto-item">
+                    <span>${data.nombre}</span>
+                    <a href="${data.url}" target="_blank" class="btn-pdf">PDF</a>
+                </div>
+            `;
+        });
+    });
+
+    // Filtro de búsqueda
+    function filterTasks() {
+        let input = document.getElementById('search').value.toLowerCase();
+        let items = document.getElementsByClassName('canto-item');
+        for (let item of items) {
+            let text = item.innerText.toLowerCase();
+            item.style.display = text.includes(input) ? "flex" : "none";
+        }
+    }
+</script>
+
+</body>
+</html>
